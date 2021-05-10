@@ -9,4 +9,10 @@ controlling a fighter plane to hit enemy planes.
 
 ## Launch
 Open the command window under the directory of NARS-FighterPlane_v1.0 or NARS-FighterPlane_v2.0 and type `python plane_game.py opennars` or `python plane_game.py ONA`.
-NARS-FighterPlane_v1.0 allows NARS to move left, move right and stay still while NARS-FighterPlane_v2.0 allows NARS to move left, move right, stay still and fire by itself.
+
+## References
+OpenNARS: https://github.com/opennars/opennars
+
+ONA: https://github.com/opennars/OpenNARS-for-Applications
+
+NARS-Pong in Unity3D: https://github.com/ccrock4t/NARS-Pong
