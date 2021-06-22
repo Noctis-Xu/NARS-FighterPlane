@@ -8,23 +8,33 @@ from NARS import *
 CREATE_ENEMY_EVENT = pygame.USEREVENT
 UPDATE_NARS_EVENT = pygame.USEREVENT + 1
 OPENNARS_BABBLE_EVENT = pygame.USEREVENT + 2
-FPS = 60
 
 
 class PlaneGame:
     def __init__(self, nars_type):
         print("Game initialization...")
         pygame.init()
+        self.game_speed = 1.0  # don't set too large, self.game_speed = 1.0 is the default speed.
+        self.fps = 60 * self.game_speed
         self.nars_type = nars_type
         self.screen = pygame.display.set_mode(SCREEN_RECT.size)  # create a display surface, SCREEN_RECT.size=(480,700)
         self.clock = pygame.time.Clock()  # create a game clock
         self.font = pygame.font.SysFont('consolas', 18, True)  # display text like scores, times, etc.
         self.__create_sprites()  # sprites initialization
         self.__create_NARS(self.nars_type)
-        pygame.time.set_timer(CREATE_ENEMY_EVENT, 1000)  # the frequency of creating an enemy
-        pygame.time.set_timer(UPDATE_NARS_EVENT, 200)  # the activity of NARS
-        pygame.time.set_timer(OPENNARS_BABBLE_EVENT, 250)
+        self.__set_timer()
         self.score = 0  # hit enemy
+
+    def __set_timer(self):
+        CREATE_ENEMY_EVENT_TIMER = 1000
+        UPDATE_NARS_EVENT_TIMER = 200
+        OPENNARS_BABBLE_EVENT_TIMER = 250
+        timer_enemy = int(CREATE_ENEMY_EVENT_TIMER / self.game_speed)
+        timer_update_NARS = int(UPDATE_NARS_EVENT_TIMER / self.game_speed)
+        timer_babble = int(OPENNARS_BABBLE_EVENT_TIMER / self.game_speed)
+        pygame.time.set_timer(CREATE_ENEMY_EVENT, timer_enemy)  # the frequency of creating an enemy
+        pygame.time.set_timer(UPDATE_NARS_EVENT, timer_update_NARS)  # the activity of NARS
+        pygame.time.set_timer(OPENNARS_BABBLE_EVENT, timer_babble)
 
     def __create_sprites(self):
         bg1 = Background()
@@ -50,7 +60,7 @@ class PlaneGame:
             self.__check_collide()
             self.__update_sprites()
             pygame.display.update()
-            self.clock.tick(FPS)
+            self.clock.tick(self.fps)
 
     def __event_handler(self):
         for event in pygame.event.get():
@@ -110,12 +120,13 @@ class PlaneGame:
 
     def __display_text(self):
         current_time = pygame.time.get_ticks()
-        delta_time_s = (current_time - self.start_time) // 1000
-        surface_time = self.font.render('Time(s): %d' % delta_time_s, True, [235, 235, 20])
+        delta_time_s = (current_time - self.start_time) / 1000
+        speeding_delta_time_s = delta_time_s * self.game_speed
+
         if delta_time_s == 0:
             performance = 0
         else:
-            performance = self.score / delta_time_s
+            performance = self.score / speeding_delta_time_s
 
         if self.nars.operation_left:
             operation_text = 'move left'
@@ -124,12 +135,13 @@ class PlaneGame:
         else:
             operation_text = 'stay still'
 
+        surface_time = self.font.render('Time(s): %d' % speeding_delta_time_s, True, [235, 235, 20])
         surface_performance = self.font.render('Performance: %.3f' % performance, True, [235, 235, 20])
         surface_score = self.font.render('Score: %d' % self.score, True, [235, 235, 20])
         surface_fps = self.font.render('FPS: %d' % self.clock.get_fps(), True, [235, 235, 20])
         surface_babbling = self.font.render('Babbling: %d' % self.remaining_babble_times, True, [235, 235, 20])
         surface_nars_type = self.font.render(self.nars_type, True, [235, 235, 20])
-        surface_version = self.font.render('v2.0', True, [235, 235, 20])
+        surface_version = self.font.render('v1.0', True, [235, 235, 20])
         surface_operation = self.font.render('Operation: %s' % operation_text, True, [235, 235, 20])
         self.screen.blit(surface_operation, [20, 10])
         self.screen.blit(surface_babbling, [20, 30])
@@ -138,7 +150,7 @@ class PlaneGame:
         self.screen.blit(surface_score, [370, 10])
         self.screen.blit(surface_fps, [370, 30])
         self.screen.blit(surface_nars_type, [5, 680])
-        self.screen.blit(surface_version, [435,680])
+        self.screen.blit(surface_version, [435, 680])
 
     @staticmethod
     def __game_over():
@@ -147,6 +159,6 @@ class PlaneGame:
 
 
 if __name__ == '__main__':
-    # game = PlaneGame('ONA')  # input 'ONA' or 'opennars'
+    #game = PlaneGame('opennars')  # input 'ONA' or 'opennars'
     game = PlaneGame(sys.argv[1])
     game.start_game()

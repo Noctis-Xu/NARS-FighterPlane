@@ -74,28 +74,24 @@ class NARS:
         if enemy_ahead:
             self.add_to_cmd('<{enemy} --> [ahead]>. :|:')
 
-    def move_left(self):
+    def move_left(self):  # NARS gives <(*,{SELF}) --> ^left>. :|:
         self.operation_left = True
         self.operation_right = False
         print('move left')
-        # self.add_to_cmd('<(*,{SELF}) --> ^left>. :|:')
 
-    def move_right(self):
+    def move_right(self):  # NARS gives <(*,{SELF}) --> ^right>. :|:
         self.operation_left = False
         self.operation_right = True
         print('move right')
-        # self.add_to_cmd('<(*,{SELF}) --> ^right>. :|:')
 
-    def dont_move(self):
+    def dont_move(self):  # NARS gives <(*,{SELF}) --> ^deactivate>. :|:
         self.operation_left = False
         self.operation_right = False
         print('stay still')
-        # self.add_to_cmd('<(*,{SELF}) --> ^deactivate>. :|:')
 
-    def fire(self):
+    def fire(self):  # NARS gives <(*,{SELF}) --> ^strike>. :|:
         self.operation_fire = True
         print('fire')
-        # self.add_to_cmd('<(*,{SELF}) --> ^strike>. :|:')
 
     def remind_goal(self):
         self.add_to_cmd('<{SELF} --> [good]>! :|:')
@@ -112,7 +108,7 @@ class NARS:
 class opennars(NARS):
     def __init__(self):
         super().__init__('opennars')
-        self.inference_cycle_frequency = 10
+        self.inference_cycle_frequency = 5
 
     def babble(self):
         rand_int = random.randint(1, 7)
@@ -148,6 +144,7 @@ class opennars(NARS):
 class ONA(NARS):
     def __init__(self):
         super().__init__('ONA')
+        self.inference_cycle_frequency = 0
 
     def read_line(self, out):  # read line without blocking
         for line in iter(out.readline, b'\n'):  # get operations
