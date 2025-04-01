@@ -1,8 +1,8 @@
 import threading
-import queue
 import subprocess
 import random
 import signal
+import platform
 
 
 class NARS:
@@ -15,7 +15,12 @@ class NARS:
         self.launch_thread()
 
     def launch_nars(self):
-        self.process = subprocess.Popen(["cmd"], bufsize=1,
+        if platform.system() == "Windows":
+            shell_cmd = ["cmd"]
+        else:
+            shell_cmd = ["/bin/bash"]
+
+        self.process = subprocess.Popen(shell_cmd, bufsize=1,
                                         stdin=subprocess.PIPE,
                                         stdout=subprocess.PIPE,
                                         universal_newlines=True,  # convert bytes to text/string
