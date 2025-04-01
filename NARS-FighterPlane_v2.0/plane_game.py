@@ -159,6 +159,8 @@ class PlaneGame:
 
 
 if __name__ == '__main__':
-    #game = PlaneGame('opennars')  # input 'ONA' or 'opennars'
-    game = PlaneGame(sys.argv[1])
+    print("Please input NARS type: 'ONA' or 'opennars' (default is 'opennars')")
+    print("Example: python plane_game.py opennars")
+    nars_type = sys.argv[1] if len(sys.argv) > 1 else 'opennars'
+    game = PlaneGame(nars_type)  # input 'ONA' or 'opennars'
     game.start_game()
