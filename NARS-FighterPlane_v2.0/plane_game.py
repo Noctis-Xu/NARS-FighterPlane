@@ -20,7 +20,7 @@ class PlaneGame:
         self.screen = pygame.display.set_mode(SCREEN_RECT.size)  # create a display surface, SCREEN_RECT.size=(480,700)
         self.clock = pygame.time.Clock()  # create a game clock
         self.font = pygame.font.SysFont('consolas', 18, True)  # display text like scores, times, etc.
-        self.__create_sprites()  # sprites initialization
+        self.__create_sprites()
         self.__create_NARS(self.nars_type)
         self.__set_timer()
         self.score = 0  # hit enemy
@@ -41,6 +41,7 @@ class PlaneGame:
         bg2 = Background(True)
         self.background_group = pygame.sprite.Group(bg1, bg2)
         self.enemy_group = pygame.sprite.Group()
+        self.enemies_created = 0
         self.hero = Hero()
         self.hero_group = pygame.sprite.Group(self.hero)
 
@@ -70,6 +71,8 @@ class PlaneGame:
             elif event.type == CREATE_ENEMY_EVENT:
                 enemy = Enemy()
                 self.enemy_group.add(enemy)
+                if self.remaining_babble_times == 0:
+                    self.enemies_created += 1
             elif event.type == UPDATE_NARS_EVENT:
                 self.nars.update(self.hero, self.enemy_group)  # use objects' positions to update NARS's sensors
             elif event.type == OPENNARS_BABBLE_EVENT:
@@ -94,10 +97,11 @@ class PlaneGame:
         collisions = pygame.sprite.groupcollide(self.hero.bullets, self.enemy_group, True,
                                                 True)  # collided=pygame.sprite.collide_circle_ratio(0.8)
         if collisions:
-            self.score += len(collisions)  # len(collisions) denotes how many collisions happened
             self.nars.praise()
             print("good")
-            print('score: ' + str(self.score))
+            if self.remaining_babble_times == 0:  # do not count scores while training
+                self.score += len(collisions)  # len(collisions) denotes how many collisions happened
+                print('score: ' + str(self.score))
 
         collisions = pygame.sprite.spritecollide(self.hero, self.enemy_group, True,
                                                  collided=pygame.sprite.collide_circle_ratio(0.7))
@@ -123,10 +127,10 @@ class PlaneGame:
         delta_time_s = (current_time - self.start_time) / 1000
         speeding_delta_time_s = delta_time_s * self.game_speed
 
-        if delta_time_s == 0:
-            performance = 0
+        if self.remaining_babble_times == 0 and self.enemies_created > 0:
+            performance = self.score / self.enemies_created
         else:
-            performance = self.score / speeding_delta_time_s
+            performance = 0
 
         if self.nars.operation_left:
             operation_text = 'move left'
@@ -136,12 +140,12 @@ class PlaneGame:
             operation_text = 'stay still'
 
         surface_time = self.font.render('Time(s): %d' % speeding_delta_time_s, True, [235, 235, 20])
-        surface_performance = self.font.render('Performance: %.3f' % performance, True, [235, 235, 20])
+        surface_performance = self.font.render('Hit rate: %.3f' % performance, True, [235, 235, 20])
         surface_score = self.font.render('Score: %d' % self.score, True, [235, 235, 20])
         surface_fps = self.font.render('FPS: %d' % self.clock.get_fps(), True, [235, 235, 20])
         surface_babbling = self.font.render('Babbling: %d' % self.remaining_babble_times, True, [235, 235, 20])
         surface_nars_type = self.font.render(self.nars_type, True, [235, 235, 20])
-        surface_version = self.font.render('v1.0', True, [235, 235, 20])
+        surface_version = self.font.render('v2.0', True, [235, 235, 20])
         surface_operation = self.font.render('Operation: %s' % operation_text, True, [235, 235, 20])
         self.screen.blit(surface_operation, [20, 10])
         self.screen.blit(surface_babbling, [20, 30])
