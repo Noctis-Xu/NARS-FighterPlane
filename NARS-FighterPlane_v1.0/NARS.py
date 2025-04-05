@@ -1,8 +1,7 @@
 import threading
 import subprocess
 import random
-import signal
-import platform
+import psutil
 
 
 class NARS:
@@ -15,20 +14,19 @@ class NARS:
         self.launch_thread()
 
     def launch_nars(self):
-        if platform.system() == "Windows":
-            shell_cmd = ["cmd"]
+        if self.type == 'opennars':
+            command = ['java', '-Xmx1024m', '-jar', 'opennars.jar']
+        elif self.type == 'ONA':
+            command = ['NAR.exe', 'shell']
         else:
-            shell_cmd = ["/bin/bash"]
+            command = ['java', '-Xmx1024m', '-jar', 'opennars.jar']
 
-        self.process = subprocess.Popen(shell_cmd, bufsize=1,
+        self.process = subprocess.Popen(command, bufsize=1,
                                         stdin=subprocess.PIPE,
                                         stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
                                         universal_newlines=True,  # convert bytes to text/string
                                         shell=False)
-        if self.type == 'opennars':
-            self.add_to_cmd('java -Xmx1024m -jar opennars.jar')  # self.add_to_cmd('java -Xmx2048m -jar opennars.jar')
-        elif self.type == 'ONA':
-            self.add_to_cmd('NAR shell')
         self.add_to_cmd('*volume=0')
 
     def launch_thread(self):
@@ -41,19 +39,32 @@ class NARS:
         pass
 
     def process_kill(self):
-        self.process.send_signal(signal.CTRL_C_EVENT)
-        self.process.terminate()
+        if self.process and self.process.poll() is None:
+            try:
+                parent = psutil.Process(self.process.pid)
+                for child in parent.children(recursive=True):
+                    child.kill()
+                parent.kill()
+                print("[process_kill] Process tree killed.")
+            except Exception as e:
+                print(f"[process_kill] Failed: {e}")
 
     def babble(self):
         pass
 
     def add_to_cmd(self, str):
-        self.process.stdin.write(str + '\n')
-        self.process.stdin.flush()
+        if self.process and self.process.stdin:
+            self.process.stdin.write(str + '\n')
+            self.process.stdin.flush()
+        else:
+            print("Process is not ready for input.")
 
     def add_inference_cycles(self, num):
-        self.process.stdin.write(f'{num}\n')
-        self.process.stdin.flush()
+        if self.process and self.process.stdin:
+            self.process.stdin.write(f'{num}\n')
+            self.process.stdin.flush()
+        else:
+            print("Process is not ready for input.")
 
     def update(self, hero, enemy_group):  # update sensors (object positions), remind goals, and make inference
         self.update_sensors(hero, enemy_group)
@@ -124,6 +135,8 @@ class opennars(NARS):
 
     def read_line(self, out):  # read line without blocking
         for line in iter(out.readline, b'\n'):  # get operations
+            if not line:  # skip empty lines
+                continue
             if (line[0:3] == 'EXE'):
                 subline = line.split(' ', 2)[2]
                 operation = subline.split('(', 1)[0]
@@ -143,6 +156,8 @@ class ONA(NARS):
 
     def read_line(self, out):  # read line without blocking
         for line in iter(out.readline, b'\n'):  # get operations
+            if not line:  # skip empty lines
+                continue
             if (line[0] == '^'):
                 operation = line.split(' ', 1)[0]
                 if operation == '^left':

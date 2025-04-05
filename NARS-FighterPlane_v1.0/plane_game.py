@@ -2,8 +2,10 @@
 # *-* encoding:utf8 *_*
 
 import sys
-from game_sprites import *
-from NARS import *
+import pygame
+
+import game_sprites as sprites
+import NARS
 
 CREATE_ENEMY_EVENT = pygame.USEREVENT
 HERO_FIRE_EVENT = pygame.USEREVENT + 1
@@ -18,7 +20,8 @@ class PlaneGame:
         self.game_speed = 1.0  # don't set too large, self.game_speed = 1.0 is the default speed.
         self.fps = 60 * self.game_speed
         self.nars_type = nars_type
-        self.screen = pygame.display.set_mode(SCREEN_RECT.size)  # create a display surface, SCREEN_RECT.size=(480,700)
+        self.screen = pygame.display.set_mode(
+            sprites.SCREEN_RECT.size)  # create a display surface, SCREEN_RECT.size=(480,700)
         self.clock = pygame.time.Clock()  # create a game clock
         self.font = pygame.font.SysFont('consolas', 18, True)  # display text like scores, times, etc.
         self.__create_sprites()
@@ -41,39 +44,42 @@ class PlaneGame:
         pygame.time.set_timer(OPENNARS_BABBLE_EVENT, timer_babble)
 
     def __create_sprites(self):
-        bg1 = Background()
-        bg2 = Background(True)
+        bg1 = sprites.Background()
+        bg2 = sprites.Background(True)
         self.background_group = pygame.sprite.Group(bg1, bg2)
         self.enemy_group = pygame.sprite.Group()
         self.enemies_created = 0
-        self.hero = Hero()
+        self.hero = sprites.Hero()
         self.hero_group = pygame.sprite.Group(self.hero)
 
     def __create_NARS(self, type):
         if type == 'opennars':
-            self.nars = opennars()
+            self.nars = NARS.opennars()
             self.remaining_babble_times = 150
         elif type == 'ONA':
-            self.nars = ONA()
+            self.nars = NARS.ONA()
             self.remaining_babble_times = 0
 
     def start_game(self):
         print("Game start...")
         self.start_time = pygame.time.get_ticks()
-        while True:
-            self.__event_handler()
-            self.__check_collide()
-            self.__update_sprites()
-            pygame.display.update()
-            self.clock.tick(self.fps)
+        try:
+            self.__running = True
+            while self.__running:
+                self.__event_handler()
+                self.__check_collide()
+                self.__update_sprites()
+                pygame.display.update()
+                self.clock.tick(self.fps)
+        finally:
+            self.__game_over()
 
     def __event_handler(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.nars.process_kill()
-                PlaneGame.__game_over()
+                self.__running = False
             elif event.type == CREATE_ENEMY_EVENT:
-                enemy = Enemy()
+                enemy = sprites.Enemy()
                 self.enemy_group.add(enemy)
                 if self.remaining_babble_times == 0:
                     self.enemies_created += 1
@@ -159,10 +165,10 @@ class PlaneGame:
         self.screen.blit(surface_nars_type, [5, 680])
         self.screen.blit(surface_version, [435, 680])
 
-    @staticmethod
-    def __game_over():
-        print("Game over...")
-        exit()
+    def __game_over(self):
+        self.nars.process_kill()
+        pygame.quit()
+        sys.exit(0)
 
 
 if __name__ == '__main__':
